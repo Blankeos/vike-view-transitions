@@ -1,4 +1,5 @@
 import { usePageContext } from "vike-react/usePageContext";
+import { navigate } from "vike/client/router";
 import { photos } from "../photos";
 import styles from "./@slug.module.css";
 
@@ -18,17 +19,27 @@ export default function Page() {
               src={photo.url || "/placeholder.svg"}
               alt={photo.title}
               className={styles.image}
+              style={{ viewTransitionName: `photo-${photo.slug}` }}
             />
           </div>
           <div className={styles.titleWrapper}>
-            <h2>{photo.title}</h2>
+            <h2 style={{ viewTransitionName: `title-${photo.slug}` }}>
+              {photo.title}
+            </h2>
           </div>
-          <button
+          <a
             className={styles.backButton}
-            onClick={() => window.history.back()}
+            onClick={() => {
+              if (document.startViewTransition)
+                document.startViewTransition(async () => {
+                  await navigate(`/`, {
+                    overwriteLastHistoryEntry: true,
+                  });
+                });
+            }}
           >
             Back
-          </button>
+          </a>
         </>
       )}
     </main>

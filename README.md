@@ -1,53 +1,81 @@
-Generated with [vike.dev/new](https://vike.dev/new) ([version 405](https://www.npmjs.com/package/create-vike/v/0.0.405)) using this command:
+# 🌬️ Vike View Transitions
 
-```sh
-bun create vike@latest --react
+![gif](./view-transitions-vike.gif)
+
+Tutorial/Demonstration on how to easily to View Transitions in Vike (mainly focusing on **cross-page transitions** since that generally requires the client-side router framework being used).
+
+That means performing Page Transitions in NextJS is unique (which is surprisingly hard) vs Vike (which is actually extremely easy!).
+
+## 2-step Tutorial
+
+1. **Indicate what to Morph across pages.**
+
+```tsx
+// Page 1.
+
+<img style={{ viewTransitionName: 'image-1' }} />
+
+// Page 2
+
+<div style={{ viewTransitionName: 'image-1' }}><img /></div>
 ```
 
-## Contents
+2. **Perform Navigation:**
 
-* [React](#react)
+The key here is using the `navigate()` function from `vike/client/router`. ([See 'Explanation' why](#explanatio)). Afaik, you can't use anything else.
 
-  * [`/pages/+config.ts`](#pagesconfigts)
-  * [Routing](#routing)
-  * [`/pages/_error/+Page.jsx`](#pages_errorpagejsx)
-  * [`/pages/+onPageTransitionStart.ts` and `/pages/+onPageTransitionEnd.ts`](#pagesonpagetransitionstartts-and-pagesonpagetransitionendts)
-  * [SSR](#ssr)
-  * [HTML Streaming](#html-streaming)
+- 2.1. With `<button>` this is extremely straightforward:
 
-## React
+  ```tsx
+  <button
+    onClick={() => {
+      if (document.startViewTransition)
+        document.startViewTransition(async () => {
+          await navigate("/image-1"); // Make sure to await.
+        });
+    }}
+  >
+    Go to Page
+  </button>
+  ```
 
-This app is ready to start. It's powered by [Vike](https://vike.dev) and [React](https://react.dev/learn).
+  ⚠️ The only thing that sucks with button is **browser anchor tag accessibility** (you can't middle-click to open in new tab OR right-click to see the context-menu). So you might want to keep it an anchor tag instead 👇.
 
-### `/pages/+config.ts`
+- 2.2 With `<a>` - just a teensy bit more code just to keep it accessible, but I can explain:
 
-Such `+` files are [the interface](https://vike.dev/config) between Vike and your code. It defines:
+  ```tsx
+  <a
+    href="/unique-id-1"
+    onClick={(e) => {
+      // So first, we need to "stop" other interceptors (i.e. Vike's client-side router interceptor for the anchor tag).
+      e.stopPropagation();
 
-* A default [`<Layout>` component](https://vike.dev/Layout) (that wraps your [`<Page>` components](https://vike.dev/Page)).
-* A default [`title`](https://vike.dev/title).
-* Global [`<head>` tags](https://vike.dev/head-tags).
+      // Second, we prevent the default behavior of the anchor tag.
+      // That means href technically won't work. (Which is good, so we can use `navigate()` instead).
+      e.preventDefault();
 
-### Routing
+      // Finally, start the view transition and call navigate inside the callback!
+      if (document.startViewTransition)
+        document.startViewTransition(async () => {
+          await navigate("/image-1"); // Make sure to await.
+        });
+    }}
+  >
+    Go to Page
+  </a>
+  ```
 
-[Vike's built-in router](https://vike.dev/routing) lets you choose between:
+## Explanation
 
-* [Filesystem Routing](https://vike.dev/filesystem-routing) (the URL of a page is determined based on where its `+Page.jsx` file is located on the filesystem)
-* [Route Strings](https://vike.dev/route-string)
-* [Route Functions](https://vike.dev/route-function)
+Your first thought may be to use [`+onPageTransitionStart`](https://vike.dev/onPageTransitionStart) or [`+onPageTransitionEnd`](https://vike.dev/onPageTransitionEnd). You may think that adding `document.startViewTransition()` in that Vike hook would work,
+but since the order of logic behind view transitions is "Start view transition, take a screenshot of current page, load new page, take a second screenshot, apply transition".
+This won't work because the "load new page" essentially MUST HAPPEN inside the startViewTransition callback.
 
-### `/pages/_error/+Page.jsx`
+So the magic of view transitions lies with the `navigate()` function from `vike/client/router`.
 
-The [error page](https://vike.dev/error-page) which is rendered when errors occur.
+Second, you might be asking, _"Why do I need to override the `<a>` tag's default behavior and propagation?"_. The `<a>` by itself is kind of bad for two reasons:
 
-### `/pages/+onPageTransitionStart.ts` and `/pages/+onPageTransitionEnd.ts`
+- [Vike's client-side router interceptor](https://github.com/vikejs/vike/blob/81afe1fea7c84791ae634c9514029cf3fb5e53c0/vike/client/client-routing-runtime/initOnLinkClick.ts#L8) - Although the default **client-side navigations** are snappy and convenient, we don't have control of when the navigation starts and ends. For view transitions, we need complete knowledge for when a change from A to B has happened and ended. You WILL get inconsistent transitions if you don't override it. Hence we do `e.stopPropagation()` and use `navigate()` instead.
+- Once we disable the client-side router via stopProgation, the `<a>` tag will now perform MPA navigations (which is kinda unintuitive if you chose Vike, Astro is much better at this), you can see this if the DevTools Network request tab responds with HTML instead of JSON when doing navigations. Hence we also `e.preventDefault()`.
 
-The [`onPageTransitionStart()` hook](https://vike.dev/onPageTransitionStart), together with [`onPageTransitionEnd()`](https://vike.dev/onPageTransitionEnd), enables you to implement page transition animations.
-
-### SSR
-
-SSR is enabled by default. You can [disable it](https://vike.dev/ssr) for all your pages or only for some pages.
-
-### HTML Streaming
-
-You can enable/disable [HTML streaming](https://vike.dev/stream) for all your pages, or only for some pages while still using it for others.
-
+🎉 Huge props to the Vike team for a well-crafted API for `navigate()` to support view transitions!
