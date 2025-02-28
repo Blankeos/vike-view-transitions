@@ -1,0 +1,10 @@
+@import url("https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,100..900;1,100..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Space+Grotesk:wght@300..700&display=swap");
+
+* {
+    margin: 0;
+    font-weight: 500;
+}
+
+:root {
+    font-family: "Space Grotesk", Tahoma, Geneva, Verdana, sans-serif;
+}
