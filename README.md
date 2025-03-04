@@ -2,7 +2,7 @@
 
 ![gif](./view-transitions-vike.gif)
 
-Tutorial/Demonstration on how to easily to View Transitions in Vike (mainly focusing on **cross-page transitions** since that generally requires the client-side router framework being used).
+Tutorial/Demonstration on how to easily do View Transitions in Vike (mainly focusing on **cross-page transitions** since that generally requires the client-side router framework being used).
 
 That means performing Page Transitions in NextJS is unique (which is surprisingly hard) vs Vike (which is actually extremely easy!).
 
@@ -45,7 +45,7 @@ The key here is using the `navigate()` function from `vike/client/router`. ([See
 
   ```tsx
   <a
-    href="/unique-id-1"
+    href="/image-1" // Technically doesn't matter, onClick. But will matter for middle click and right click.
     onClick={(e) => {
       // So first, we need to "stop" other interceptors (i.e. Vike's client-side router interceptor for the anchor tag).
       e.stopPropagation();
@@ -57,7 +57,7 @@ The key here is using the `navigate()` function from `vike/client/router`. ([See
       // Finally, start the view transition and call navigate inside the callback!
       if (document.startViewTransition)
         document.startViewTransition(async () => {
-          await navigate("/image-1"); // Make sure to await.
+          await navigate("/image-1"); // Make sure to await. Make sure it's the same as href.
         });
     }}
   >
